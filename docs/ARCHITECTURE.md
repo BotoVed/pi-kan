@@ -226,10 +226,15 @@ Env-переопределения `KAN_URL`, `KAN_TOKEN_FILE` (dev).
 { "lists": { "backlog": "…", "ready": "…", "inProgress": "…",
              "review": "…", "done": "…" },
   "pollIntervalSec": 60, "maxConcurrent": 2,
-  "wake": { "model": "…", "thinkingLevel": "…" },
+  "wake": { "model": null, "thinkingLevel": null },
   "events": { "dueDate": true, "checklistEdits": true },
   "enabled": true, "host": null }
 ```
+
+`wake.model`/`wake.thinkingLevel` — **необязательные**: `null`/отсутствуют →
+флаг не передаётся, действует дефолт pi-конфига хоста. Когда участники
+станут аккаунтами-исполнителями, схема расширится маппингом исполнитель→модель
+(обратная совместимость: неизвестные ключи — warning, не ошибка).
 
 Правила:
 - **нет карточки `.pi-kan` → борда не мониторится** (подписка/отписка борды =
