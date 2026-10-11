@@ -12,7 +12,7 @@ skinparam participantStyle-> rectangle
 
 actor "Человек (телефон)" as U
 participant "Борда Kan.bn" as B
-participant "Вахтёр\n(демон, без LLM)" as W
+participant "Keeper\n(демон, без LLM)" as W
 participant "Сессия kan-ME-42\n(агент)" as A
 participant "Job\n(ASR/диаризация)" as J
 database "~/.kan/tasks/ME-42/" as FS
@@ -34,7 +34,7 @@ A -> B : вопрос «куда сохранять? варианты…»\n+ mo
 note right of A : ждёт хоть неделю — он не процесс
 U -> B : коммент «в Meetings/октябрь/,\nзадачи с дедлайнами»
 W -> A : пробуждение №3 (человеческий коммент)
-A -> B : сохранить транскрипт (NFS);\nчитать борду «Рабочие задачи» (вахтёр её не поллитит);\nсоздать карточки экшенов
+A -> B : сохранить транскрипт (NFS);\nчитать борду «Рабочие задачи» (хранитель её не поллитит);\nсоздать карточки экшенов
 A -> B : итог-коммент: путь + ссылки + «Бригада: …»,\nчек-лист ✓, move→«на согласовании»
 U -> B : ME-42 → «завершены» (только человек)
 note over A : сессия kan-ME-42 — архив задачи:\npi --session-id kan-ME-42 вернёт всю кухню
@@ -48,7 +48,7 @@ note over A : сессия kan-ME-42 — архив задачи:\npi --session-
 title B. Поднять ВМ с GitLab (ME-43)
 actor "Человек" as U
 participant "Борда" as B
-participant "Вахтёр" as W
+participant "Keeper" as W
 participant "Сессия kan-ME-43" as A
 participant "Субагент\n(infra)" as S
 database "~/.kan/tasks/ME-43/" as FS
@@ -75,7 +75,7 @@ note over B : карточка в «в работе» с замком;\nслед
 title C. Письмо с согласованием
 actor "Человек (телефон)" as U
 participant "Карточка\n«письмо Иванову»" as B
-participant "Вахтёр" as W
+participant "Keeper" as W
 participant "Сессия задачи" as A
 
 A -> B : черновик письма (коммент) → «на согласовании»
@@ -97,14 +97,14 @@ note over B : вся цепочка «агент предложил → чело
 title D. Dogfooding: борда кормит себя
 actor "Человек" as U
 participant "Борда agents-tasks" as B
-participant "Вахтёр" as W
+participant "Keeper" as W
 participant "Сессия kan-ME-1\n(разработчик pi-kan)" as A
 participant "Репозиторий\npi-kan" as R
 
 U -> B : карточка «сделать расширение pi-kan»\n→ «к исполнению»
 W -> A : пробуждение
 A -> B : чек-лист «План»
-A -> R : код watcher, тесты, коммиты
+A -> R : код keeper, тесты, коммиты
 A -> B : вехи/итог-коммент → «на согласовании»
 U -> B : ревью с телефона → «завершены»
 @enduml

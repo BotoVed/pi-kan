@@ -1,0 +1,20 @@
+{
+  "name": "pi-kan",
+  "version": "0.1.0",
+  "description": "Kan.bn хранитель + расширение pi: борда как интерфейс агента",
+  "type": "module",
+  "license": "MIT",
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./extensions/pi-kan.ts"]
+  },
+  "bin": {
+    "kan-keeper": "./src/keeper/cli.ts"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
