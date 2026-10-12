@@ -7,6 +7,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { KanClient, KanCard, KanActivity } from "../kan-client.ts";
 import type { BoardConfig } from "../config.ts";
+import { sessionTokenFile } from "../identity.ts";
 import { runId } from "./diff.ts";
 
 export interface LockInfo {
@@ -188,10 +189,14 @@ export async function wakeSession(
   const logPath = join(dir, `wake-${id}.log`);
   writeFileSync(logPath, `=== wake ${id} ${new Date().toISOString()}\n${prompt}\n\n`);
   const logFd = openSync(logPath, "a"); // stdout+stderr сессии — в лог пробуждения
+  // Идентичность сессии: MCP kan берёт Authorization из KAN_TOKEN_FILE
+  // (shell-подстановка в mcp.json). Agent заведён — пишем от Agent,
+  // нет — legacy ключ владельца (обратная совместимость).
+  const agentToken = sessionTokenFile();
   const child = spawn("pi", args, {
     cwd: dir,
     stdio: ["ignore", logFd, logFd],
-    env: { ...process.env, KAN_TASK_DIR: dir },
+    env: { ...process.env, KAN_TASK_DIR: dir, ...(agentToken ? { KAN_TOKEN_FILE: agentToken } : {}) },
   });
   // ENOENT (pi не в PATH хранителя) иначе глотается молча: pid=-1 и тишина
   child.on("error", (e) => {

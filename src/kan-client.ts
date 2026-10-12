@@ -103,6 +103,11 @@ export class KanClient {
     }
   }
 
+  /** Общий вызов REST (для регистратора идентичностей: invites/invites/roles). */
+  request<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
+    return this.req<T>(method, path, body);
+  }
+
   // ── чтение ──
   // /workspaces отдаёт [{role, workspace: {...}}] — разворачиваем
   async listWorkspaces(): Promise<{ publicId: string; name: string }[]> {

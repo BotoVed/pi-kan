@@ -7,6 +7,7 @@ import { mkdirSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { KanClient, KanError, type KanActivity, type KanCard } from "../kan-client.ts";
 import { loadHostConfig, readToken, parseBoardConfig, type BoardConfig } from "../config.ts";
+import { runRegistrar, keeperWriteToken, AGENTS_DOMAIN } from "../identity.ts";
 import { loadState, saveState, boardState, type State } from "../state.ts";
 import { diffBoard, listName, type WakeEvent } from "./diff.ts";
 import { wakeSession, activeLocks, readLock, killSession, clearLock, describeEvent, type WakeHandle } from "./wake.ts";
@@ -58,6 +59,11 @@ async function classifyComments(
     for (const a of activities) {
       if (!a.type.includes("comment.added") || !a.comment || !ids.has(a.comment.publicId)) continue;
       const text = a.comment.comment;
+      // Надёжный антицикл: автор из agents.local ⇒ машина (тег — legacy-страховка).
+      if ((a.user?.email ?? "").toLowerCase().endsWith(`@${AGENTS_DOMAIN}`)) {
+        if (text.includes("<!--kan:job")) job.push(a);
+        continue;
+      }
       if (text.includes("<!--kan:job")) job.push(a);
       else if (text.includes("<!--kan:agent")) continue; // агент — не будит
       else human.push(a);
@@ -87,7 +93,16 @@ function eventPayload(
 
 async function tick(): Promise<void> {
   const host = loadHostConfig();
-  const kan = new KanClient(host.url, readToken(host));
+  const ownerToken = readToken(host);
+  // Регистратор личностей: быстрый путь — только fs-stat (токены на месте → ноль запросов).
+  try {
+    for (const r of await runRegistrar(host, ownerToken, log)) {
+      log(`identity ${r.name}: ${r.status}${r.detail ? ` — ${r.detail}` : ""}`);
+    }
+  } catch (e) {
+    log(`identity registrar: ${(e as Error).message}`);
+  }
+  const kan = new KanClient(host.url, keeperWriteToken(host, ownerToken));
   const state: State = loadState(host.kanRoot);
   const me = hostname();
   const now = Date.now();
