@@ -98,8 +98,42 @@ export function extractConfigJson(description: string | null): string | null {
   if (!description) return null;
   const fence = description.match(/```(?:json)?\s*\n([\s\S]*?)```/);
   if (fence) return fence[1].trim();
+  // WYSIWYG-редактор Kan пересохраняет ```json-блок как HTML
+  // (<pre><code class="language-json">…</code></pre>) — учимся читать и так
+  const html = extractFromHtml(description);
+  if (html) return html;
   const trimmed = description.trim();
   return trimmed.startsWith("{") ? trimmed : null;
+}
+
+const ENTITIES: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+};
+
+function extractFromHtml(description: string): string | null {
+  if (!description.includes("<")) return null;
+  const blocks = [...description.matchAll(/<code[^>]*>([\s\S]*?)<\/code>/g)].map((m) => m[1]);
+  if (!blocks.length) blocks.push(description); // голый JSON в <p> и т.п.
+  for (const block of blocks) {
+    const text = block
+      .replace(/<[^>]*>/g, "")
+      .replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, code: string) => {
+        if (code.startsWith("#x")) return String.fromCodePoint(parseInt(code.slice(1), 16));
+        if (code.startsWith("#")) return String.fromCodePoint(parseInt(code.slice(1), 10));
+        return ENTITIES[code.toLowerCase()] ?? m;
+      })
+      .trim();
+    const start = text.indexOf("{");
+    if (start < 0) continue;
+    const candidate = text.slice(start);
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch {
+      /* не наш блок */
+    }
+  }
+  return null;
 }
 
 /**
