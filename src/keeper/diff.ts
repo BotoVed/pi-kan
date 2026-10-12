@@ -71,17 +71,24 @@ export function diffBoard(
   const isBacklog = (id: string) => id === cfg.lists.backlog;
   const isDone = (id: string) => id === cfg.lists.done;
 
+  // Хранитель следит ТОЛЬКО за пятью списками из cfg.lists. Всё остальное
+  // (архивы, «входящие», любые папки вне конфига) — не существует: ни событий,
+  // ни состояния. Уход отслеживаемой карточки в такой список = исчезновение из
+  // снапшота = стоп-сигнал (archived): сессия убивается, но не будится.
+  const watched = new Set<string>(Object.values(cfg.lists));
+
   for (const list of board.lists) {
+    if (!watched.has(list.publicId)) continue;
     for (const card of list.cards) {
       seen.add(card.publicId);
-      const isConfigCard = cfgCard?.card.publicId === card.publicId;
+  const isConfigCard = cfgCard?.card.publicId === card.publicId;
       const prev = bs.cards[card.publicId];
       const next = cardState(card, list.publicId);
 
       if (!prev) {
         // Первая встреча карточки: будим только если она сразу в ready
         // (создана/брошена в очередь между поллами). Иначе — молча запоминаем.
-        if (!isConfigCard && list.publicId === cfg.lists.ready && !isBacklog(list.publicId)) {
+        if (!isConfigCard && list.publicId === cfg.lists.ready) {
           events.push({ type: "ready", card, listId: list.publicId });
         }
         bs.cards[card.publicId] = next;
@@ -94,7 +101,9 @@ export function diffBoard(
       );
 
       // Спящие списки: событие только если КАРТОЧКА СЕЙЧАС спит (выход
-      // из бэклога в ready — как раз событие, а не дремота)
+      // из бэклога в ready — как раз событие, а не дремота). Перемещения в
+      // НЕотслеживаемые списки (архив) сюда не доходят: они не в снапшоте,
+      // и видны как исчезновение → стоп-сигнал.
       const dormant = isConfigCard || isBacklog(next.listId) || isDone(next.listId);
 
       if (!dormant) {
@@ -104,8 +113,8 @@ export function diffBoard(
           // «на согласовании» — зона человека: вход туда НЕ событие (иначе
           // собственный итог-ход сессии будит её же — автоцикл, аудит ME-6)
         } else if (moved) {
-          // перемещение юзера между рабочими списками (не в ready) — событие moved;
-          // вход из бэклога в не-ready список — тоже «оживление», будим
+          // перемещение юзера между рабочими списками (не в ready/review) —
+          // событие moved; выход из бэклога в рабочий список — «оживление»
           events.push({ type: "moved", card, listId: list.publicId, fromListId: prev.listId });
         } else if (newComments.length && cfg.events.comments) {
           events.push({ type: "comment", card, listId: list.publicId, commentIds: newComments });
