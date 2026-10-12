@@ -5,7 +5,7 @@
 import { hostname } from "node:os";
 import { mkdirSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
-import { KanClient, type KanActivity, type KanCard } from "../kan-client.ts";
+import { KanClient, KanError, type KanActivity, type KanCard } from "../kan-client.ts";
 import { loadHostConfig, readToken, parseBoardConfig, type BoardConfig } from "../config.ts";
 import { loadState, saveState, boardState, type State } from "../state.ts";
 import { diffBoard, listName, type WakeEvent } from "./diff.ts";
@@ -105,6 +105,11 @@ async function tick(): Promise<void> {
       try {
         board = await kan.getBoard(b.publicId);
       } catch (e) {
+        if (e instanceof KanError && e.status === 404) {
+          // борду удалили из Kan — вычёркиваем из состояния без шума
+          delete state.boards[b.publicId];
+          continue;
+        }
         log(`board ${b.name}: ${(e as Error).message}`);
         continue;
       }
