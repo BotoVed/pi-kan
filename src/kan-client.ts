@@ -162,4 +162,35 @@ export class KanClient {
   createList(input: { boardPublicId: string; name: string; description?: string }): Promise<KanList> {
     return this.req("POST", "/lists", input);
   }
+
+  // Вложение файла в карточку: три шага через presigned S3 PUT (multipart не
+  // поддерживается). Требует настроенного бакета на Kan (иначе 500 "bucket
+  // not configured"). Лимит сервера — 50 MiB.
+  async uploadAttachment(
+    cardPublicId: string,
+    file: { filename: string; contentType: string; data: Uint8Array },
+  ): Promise<void> {
+    const { url, key } = await this.req<{ url: string; key: string }>(
+      "POST",
+      `/cards/${cardPublicId}/attachments/upload-url`,
+      { cardPublicId, filename: file.filename, contentType: file.contentType, size: file.data.length },
+    );
+    const put = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": file.contentType },
+      body: file.data as BodyInit,
+      signal: AbortSignal.timeout(120_000),
+    });
+    if (!put.ok) {
+      throw new KanError(put.status, `S3 PUT → ${put.status}: ${(await put.text()).slice(0, 200)}`);
+    }
+    await this.req("POST", `/cards/${cardPublicId}/attachments/confirm`, {
+      cardPublicId,
+      s3Key: key,
+      filename: file.filename,
+      originalFilename: file.filename,
+      contentType: file.contentType,
+      size: file.data.length,
+    });
+  }
 }

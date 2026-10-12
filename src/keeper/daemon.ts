@@ -10,6 +10,7 @@ import { loadHostConfig, readToken, parseBoardConfig, type BoardConfig } from ".
 import { loadState, saveState, boardState, type State } from "../state.ts";
 import { diffBoard, listName, type WakeEvent } from "./diff.ts";
 import { wakeSession, activeLocks, readLock, killSession, clearLock, describeEvent, type WakeHandle } from "./wake.ts";
+import { attachNewArtifacts } from "./artifacts.ts";
 
 const TICK_MS = 15_000;
 
@@ -272,6 +273,10 @@ async function tick(): Promise<void> {
             delete rt.pending[cardId];
             handles.delete(cardId);
             clearLock(host.kanRoot, cardId);
+            // свежие артефакты хода — на карточку вложениями (если Kan с бакетом)
+            void attachNewArtifacts(kan, host.kanRoot, cardId, log).catch((e) =>
+              log(`артефакты ${cardId}: ${(e as Error).message}`),
+            );
           });
         } catch (e) {
           log(`wake FAILED ${board.name}/${card.title}: ${(e as Error).message}`);
