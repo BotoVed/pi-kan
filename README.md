@@ -110,10 +110,11 @@ kan-keeper install                # systemd-user-юнит хранителя (en
 src/keeper/     хранитель: поллер, diff событий, спавн сессий, артефакты
 src/kan-client.ts  REST-клиент Kan.bn (+вложения через presigned S3)
 extensions/     расширение pi: /kan init|status, мандат-гард
-docs/           ARCHITECTURE.md, WAKE-CONTRACT.md, SEQUENCES.md
+docs/           ARCHITECTURE.md, CONFIG.md, WAKE-CONTRACT.md, SEQUENCES.md
 ```
 
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — компоненты, иерархия истины, матрица событий, границы и мандаты.
+- [CONFIG.md](docs/CONFIG.md) — справочник настроек: хост-конфиг и политика борды в карточке `.pi-kan` (ключи, валидация, рецепты, диагностика).
 - [WAKE-CONTRACT.md](docs/WAKE-CONTRACT.md) — контракт пробуждения дословно.
 - [SEQUENCES.md](docs/SEQUENCES.md) — сиквенсы: транскрибация встречи, долгая работа, согласование.
 
